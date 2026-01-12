@@ -1,53 +1,355 @@
-# Iron Condor Backtester v2.0
+# Glimmerglass Iron Condor Backtester
 
-**High-performance options strategy backtester with rule-based entries and exits**
+A sophisticated options backtesting platform for Iron Condor strategies, built with Streamlit and featuring a Tier 0 database architecture for efficient OHLC data management.
 
-![Version](https://img.shields.io/badge/version-2.0.0-green)
-![Python](https://img.shields.io/badge/python-3.10+-blue)
+![Python](https://img.shields.io/badge/python-3.11+-blue)
+![Streamlit](https://img.shields.io/badge/streamlit-1.52+-red)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 
-## 🚀 Features
+## 📋 Table of Contents
 
-- **Modular Architecture**: Clean separation of concerns with core logic, UI, and utilities
-- **High Performance**: NumPy-based backtest engine optimized for large datasets (1M+ rows)
-- **Modern UI**: Tab-based interface with terminal-inspired finance theme
-- **Comprehensive Analytics**: 20+ performance metrics, equity curves, drawdown analysis
-- **Export Capabilities**: CSV export for trades/equity/rejections + JSON run configuration
-- **Robust Validation**: Input data validation with helpful error messages
-- **Smart Caching**: Hash-based caching with manual cache control
+- [Features](#features)
+- [Architecture](#architecture)
+- [Prerequisites](#prerequisites)
+- [Local Development Setup](#local-development-setup)
+- [Running the Application](#running-the-application)
+- [Database Management](#database-management)
+- [Deployment](#deployment)
+- [Auto-Deploy Setup](#auto-deploy-setup)
+- [Project Structure](#project-structure)
+- [Strategy Overview](#strategy-overview)
+- [Contributing](#contributing)
+- [Troubleshooting](#troubleshooting)
 
-## 📊 Strategy Overview
+---
 
-**Entry Conditions:**
-- ADX < 20 (low trend strength)
-- RSI between 40-60 (neutral momentum)
-- Historical Volatility within specified range
-- Outside blackout windows (earnings/events)
+## ✨ Features
 
-**Strike Selection:**
-- Short strikes at Bollinger Band edges (on VWAP)
-- Long strikes 5 points wider (adjustable based on regime)
-- Optional trend bias for strike adjustment
+### 🎯 Backtesting Engine
+- **Iron Condor Strategy**: Automated backtesting with configurable parameters
+- **Real-time visualization**: Interactive charts using Plotly
+- **Risk metrics**: Calculate max profit, max loss, win rate, and P&L statistics
+- **Portfolio simulation**: Test strategies across different market conditions
+- **High performance**: NumPy-based engine optimized for large datasets (1M+ rows)
 
-**Exit Rules (priority order):**
-1. **Broke**: Price breaches long strikes
-2. **Breach**: Price breaches short strikes
-3. **ADX Exit**: Trend emerges (ADX > threshold)
-4. **VWAP Exit**: VWAP slope reversal + price divergence
-5. **Expiry**: Next Friday or 5 bars (whichever first)
+### 💾 Tier 0 Database
+- **Hybrid architecture**: SQLite metadata + Parquet files + DuckDB queries
+- **Web-based data upload**: CSV file upload interface for OHLC data
+- **Dataset management**: View, load, and delete datasets via UI
+- **Optimized storage**: Efficient Parquet compression for time-series data
+
+### 📊 Analysis Tools
+- **Position Greeks**: Track Delta, Gamma, Vega, Theta
+- **P&L tracking**: Daily and cumulative profit/loss analysis
+- **Volatility analysis**: VIX-based market regime detection
+- **Performance metrics**: Sharpe ratio, max drawdown, win/loss ratios
+- **Export capabilities**: CSV export for trades, equity curves, and rejections
+
+---
+
+## 🏗️ Architecture
+
+### Tier 0 Database Design
+
+```
+┌─────────────────────────────────────────────┐
+│           Streamlit Application             │
+│                  (app.py)                   │
+└──────────────────┬──────────────────────────┘
+                   │
+         ┌─────────┴─────────┐
+         │                   │
+    ┌────▼────┐         ┌────▼────┐
+    │ SQLite  │         │ DuckDB  │
+    │ Metadata│◄────────┤ Query   │
+    │         │         │ Engine  │
+    └────┬────┘         └────┬────┘
+         │                   │
+         └─────────┬─────────┘
+                   │
+         ┌─────────▼─────────┐
+         │  Parquet Files    │
+         │  (OHLC Data)      │
+         └───────────────────┘
+```
+
+**Components:**
+- **SQLite**: Stores dataset metadata (symbol, timeframe, record count, date range)
+- **Parquet**: Stores actual OHLC time-series data (compressed, columnar format)
+- **DuckDB**: Zero-copy queries directly on Parquet files (no data duplication)
+
+---
+
+## 🔧 Prerequisites
+
+- **Python 3.11+** (tested on 3.13)
+- **Git** (for version control)
+- **GitHub account** (for deployment)
+- **Streamlit Cloud account** (free, for hosting)
+
+---
+
+## 🚀 Local Development Setup
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/ryeguykorn/Glimmerglass.git
+cd Glimmerglass
+```
+
+### 2. Create Virtual Environment
+
+```bash
+# Create virtual environment
+python3 -m venv .venv
+
+# Activate virtual environment
+# On macOS/Linux:
+source .venv/bin/activate
+
+# On Windows:
+.venv\Scripts\activate
+```
+
+### 3. Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+**Core Dependencies:**
+- `streamlit>=1.52.0` - Web framework
+- `duckdb>=0.9.0` - Query engine
+- `pyarrow>=14.0.0` - Parquet file support
+- `plotly>=5.17.0` - Interactive charts
+- `numpy`, `pandas` - Data manipulation
+- `scipy` - Statistical calculations
+
+### 4. Initialize the Database
+
+The database is automatically initialized on first run, but you can manually initialize:
+
+```bash
+python3 -c "from db.schema import init_database; init_database()"
+```
+
+This creates:
+- `data/tier0.db` - SQLite database
+- `data/parquet/` - Directory for Parquet files
+
+---
+
+## 🎮 Running the Application
+
+### Start the Development Server
+
+```bash
+# Using virtual environment Python
+.venv/bin/streamlit run app.py
+
+# Or if venv is activated:
+streamlit run app.py
+```
+
+The app will start at: **http://localhost:8501**
+
+### Accessing Different Tabs
+
+1. **💾 Database** - Upload and manage OHLC datasets
+2. **📊 Backtest** - Run Iron Condor backtests
+3. **📈 Analysis** - View P&L and performance metrics
+4. **⚙️ Settings** - Configure strategy parameters
+
+---
+
+## 💾 Database Management
+
+### Uploading Data
+
+1. Navigate to the **Database** tab
+2. Click **"Browse files"** and select a CSV file
+3. CSV must include these columns:
+   - `timestamp` (datetime)
+   - `open` (float)
+   - `high` (float)
+   - `low` (float)
+   - `close` (float)
+   - `volume` (int/float)
+4. Enter **Symbol** (e.g., `SPY`, `QQQ`)
+5. Select **Timeframe** (1min, 5min, 15min, etc.)
+6. Click **"Ingest Data"**
+
+### Viewing Datasets
+
+The **Available Datasets** table shows:
+- Symbol and timeframe
+- Date range (first/last dates)
+- Number of records
+- File size
+
+### Loading Data for Backtesting
+
+1. Use the **"Load Dataset"** section
+2. Select symbol and timeframe from dropdowns
+3. Data automatically loads for backtesting
+
+### Deleting Datasets
+
+1. Expand **"Delete Dataset"** section
+2. Select dataset to remove
+3. Click **"Delete"** (removes both SQLite entry and Parquet file)
+
+### Programmatic Data Upload
+
+```python
+from db.ingest import ingest_dataframe
+import pandas as pd
+
+# Load your data
+df = pd.read_csv('your_data.csv')
+
+# Ingest into database
+ingest_dataframe(
+    df=df,
+    symbol='SPY',
+    timeframe='1min',
+    overwrite=True  # Replace if exists
+)
+```
+
+---
+
+## 🌐 Deployment
+
+### Deploy to Streamlit Cloud (Free)
+
+#### Step 1: Push Code to GitHub
+
+```bash
+# If not already initialized
+git init
+git add .
+git commit -m "Initial commit"
+
+# Create a new repository on GitHub, then:
+git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git
+git branch -M main
+git push -u origin main
+```
+
+#### Step 2: Deploy on Streamlit Cloud
+
+1. Go to **https://share.streamlit.io/**
+2. Sign in with GitHub
+3. Click **"Create app"**
+4. Fill in the form:
+   - **Repository**: `YOUR_USERNAME/YOUR_REPO`
+   - **Branch**: `main`
+   - **Main file path**: `app.py`
+   - **App URL**: Choose your subdomain (e.g., `glimmerglass`)
+5. Click **"Deploy!"**
+
+#### Step 3: Wait for Deployment
+
+- Initial deployment takes **3-5 minutes**
+- Streamlit Cloud will:
+  - Install dependencies from `requirements.txt`
+  - Start the application
+  - Assign a public URL: `https://YOUR_SUBDOMAIN.streamlit.app`
+
+#### Step 4: Verify Deployment
+
+- Visit your public URL
+- Test all tabs (Database, Backtest, Analysis)
+- Upload a sample dataset
+
+### Making Updates
+
+After deployment, any push to GitHub automatically redeploys:
+
+```bash
+# Make your code changes
+git add .
+git commit -m "Description of changes"
+git push
+
+# Streamlit Cloud detects the push and redeploys (~2-3 minutes)
+```
+
+---
+
+## 🤖 Auto-Deploy Setup
+
+For automatic Git commits and pushes on file changes:
+
+### 1. Start Auto-Deploy Watcher
+
+```bash
+# Activate virtual environment
+source .venv/bin/activate
+
+# Run the auto-deploy script
+python auto_deploy.py
+```
+
+### 2. How It Works
+
+- **Watches** all `.py` files in the project
+- **Detects** changes when you save files
+- **Waits** 10 seconds (cooldown period)
+- **Commits** changes with automatic message
+- **Pushes** to GitHub
+- **Triggers** Streamlit Cloud redeployment
+
+### 3. What's Ignored
+
+Auto-deploy ignores:
+- `.git/` directory
+- `__pycache__/` directories
+- `.venv/` virtual environment
+- `data/tier0.db` (database file)
+- `.pyc` compiled Python files
+- `.DS_Store` (macOS files)
+
+### 4. Stop Auto-Deploy
+
+Press `Ctrl+C` in the terminal running `auto_deploy.py`
+
+### 5. Manual Deployment (Alternative)
+
+If you prefer manual control:
+
+```bash
+git add .
+git commit -m "Your commit message"
+git push
+```
+
+---
 
 ## 📁 Project Structure
 
 ```
-Glimmerglass.WebApp/
-├── app.py                    # Main Streamlit application
-├── config.py                 # Configuration constants
-├── requirements.txt          # Python dependencies
+Glimmerglass/
+├── app.py                  # Main Streamlit application
+├── config.py               # Configuration settings
+├── benchmark.py            # Performance benchmarking
+├── auto_deploy.py          # Auto-deploy watcher
+├── requirements.txt        # Python dependencies
+├── README.md              # This file
 │
-├── core/                     # Core business logic
+├── db/                    # Tier 0 Database modules
 │   ├── __init__.py
-│   ├── types.py             # Data structures (Position, BacktestResult)
-│   ├── io.py                # Data loading & validation
+│   ├── schema.py          # SQLite schema and CRUD operations
+│   ├── ingest.py          # Data ingestion (CSV → Parquet)
+│   ├── query.py           # DuckDB query interface
+│   └── backtest_store.py  # Backtest result storage
+│
+├── core/                  # Core business logic
+│   ├── __init__.py
+│   ├── types.py          # Data structures (Position, BacktestResult)
+│   ├── io.py             # Data loading & validation
 │   ├── resample.py          # Timeframe resampling
 │   ├── indicators.py        # Technical indicators
 │   ├── backtest.py          # Backtest engine
