@@ -569,27 +569,94 @@ python3 -c "from db.schema import init_database; init_database()"
 - Blackout window overlays
 - Run configuration JSON export
 
-## 🧪 Testing
+---
 
-```bash
-# Run test suite
-pytest tests/ -v
+## 📚 Database Schema
 
-# Run with coverage
-pytest tests/ --cov=core --cov=ui --cov-report=html
+### SQLite Metadata Table
+
+```sql
+CREATE TABLE datasets (
+    id INTEGER PRIMARY KEY,
+    symbol TEXT NOT NULL,
+    timeframe TEXT NOT NULL,
+    first_date TEXT NOT NULL,
+    last_date TEXT NOT NULL,
+    record_count INTEGER NOT NULL,
+    parquet_path TEXT NOT NULL,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(symbol, timeframe)
+);
 ```
 
-## ⚡ Performance
+### Parquet File Schema
 
-**Optimizations Applied:**
+| Column    | Type      | Description                    |
+|-----------|-----------|--------------------------------|
+| timestamp | datetime  | Bar timestamp (UTC)            |
+| open      | float     | Opening price                  |
+| high      | float     | Highest price in period        |
+| low       | float     | Lowest price in period         |
+| close     | float     | Closing price                  |
+| volume    | int/float | Trading volume                 |
 
-1. **NumPy Arrays**: Core backtest loop uses integer-indexed arrays
-2. **Vectorized Filters**: Entry eligibility pre-computed as boolean arrays
-3. **Dataclasses**: Lightweight position representation
-4. **Smart Caching**: Hash-based cache keys for deterministic results
-5. **Memory Cleanup**: Explicit garbage collection after heavy operations
+---
 
-**Benchmarks** (on M1 Mac):
+## 📚 Additional Resources
+
+- **Streamlit Docs**: https://docs.streamlit.io
+- **DuckDB Docs**: https://duckdb.org/docs
+- **Plotly Docs**: https://plotly.com/python
+- **Options Greeks**: https://www.investopedia.com/options-greeks-4694784
+
+---
+
+## 📝 License
+
+This project is for educational and research purposes.
+
+---
+
+## 👤 Author
+
+Built by Ryan
+
+**Repository**: https://github.com/ryeguykorn/Glimmerglass
+
+**Deployed App**: https://YOUR_SUBDOMAIN.streamlit.app (after deployment)
+
+---
+
+## 🎯 Quick Start Summary
+
+```bash
+# 1. Clone and setup
+git clone https://github.com/ryeguykorn/Glimmerglass.git
+cd Glimmerglass
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
+# 2. Run locally
+streamlit run app.py
+
+# 3. Deploy (after pushing to GitHub)
+# - Go to share.streamlit.io
+# - Click "Create app"
+# - Enter: ryeguykorn/Glimmerglass, main, app.py
+# - Click "Deploy!"
+
+# 4. Auto-deploy (optional)
+python auto_deploy.py
+```
+
+---
+
+**Questions or Issues?**  
+Open an issue on GitHub or contact the maintainer.
+
+**Happy Backtesting! 🚀**
+
 
 | Dataset Size | Before (v1.0) | After (v2.0) | Improvement |
 |--------------|---------------|--------------|-------------|
