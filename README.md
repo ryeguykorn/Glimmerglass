@@ -350,54 +350,153 @@ Glimmerglass/
 │   ├── __init__.py
 │   ├── types.py          # Data structures (Position, BacktestResult)
 │   ├── io.py             # Data loading & validation
-│   ├── resample.py          # Timeframe resampling
-│   ├── indicators.py        # Technical indicators
-│   ├── backtest.py          # Backtest engine
-│   └── metrics.py           # Performance metrics
+│   ├── logic.py          # Iron condor position management
+│   ├── backtest.py       # Backtest engine with Greeks calculation
+│   └── analytics.py      # Performance metrics and trade analysis
 │
-├── ui/                       # UI components
+├── ui/                   # Streamlit interface
 │   ├── __init__.py
-│   ├── layout.py            # Theme & layout components
-│   ├── charts.py            # Plotly chart generators
-│   └── exports.py           # CSV/JSON export utilities
+│   ├── components.py     # Reusable UI widgets
+│   ├── pages.py          # Tab content (backtest, analysis, settings)
+│   └── theme.py          # Custom styling and CSS
 │
-├── tests/                    # Test suite
+├── data/                 # Database files (gitignored)
+│   ├── tier0.db         # SQLite metadata
+│   └── parquet/         # Parquet data files
+│       ├── SPY_1min_20240101_20241231.parquet
+│       └── ...
+│
+├── tests/                # Test suite
 │   ├── __init__.py
-│   └── test_core.py         # Core module tests
+│   └── test_core.py     # Core module tests
 │
 ├── .streamlit/
-│   └── config.toml          # Streamlit configuration
+│   └── config.toml      # Streamlit configuration
 │
-└── README.md                # This file
+├── public/              # Static files
+│   └── Index.html
+│
+└── .venv/               # Virtual environment (gitignored)
 ```
 
-## 🛠️ Installation
+---
 
-### Prerequisites
+## 📊 Strategy Overview
 
-- Python 3.10 or higher
-- pip package manager
+**Entry Conditions:**
+- ADX < 20 (low trend strength)
+- RSI between 40-60 (neutral momentum)
+- Historical Volatility within specified range
+- Outside blackout windows (earnings/events)
 
-### Setup
+**Strike Selection:**
+- Short strikes at Bollinger Band edges (on VWAP)
+- Long strikes 5 points wider (adjustable based on regime)
+- Optional trend bias for strike adjustment
+
+**Exit Rules (priority order):**
+1. **Broke**: Price breaches long strikes
+2. **Breach**: Price breaches short strikes
+3. **ADX Exit**: Trend emerges (ADX > threshold)
+4. **VWAP Exit**: VWAP slope reversal + price divergence
+5. **Expiry**: Next Friday or 5 bars (whichever first)
+
+---
+
+## 🤝 Contributing
+
+### Development Workflow
+
+1. **Create a branch** for your feature
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+
+2. **Make changes** and test locally
+   ```bash
+   streamlit run app.py
+   ```
+
+3. **Commit changes**
+   ```bash
+   git add .
+   git commit -m "Add: description of your changes"
+   ```
+
+4. **Push and create Pull Request**
+   ```bash
+   git push origin feature/your-feature-name
+   ```
+
+### Code Style
+
+- Follow PEP 8 guidelines
+- Use type hints where applicable
+- Add docstrings to functions
+- Keep functions focused and modular
+
+### Testing
+
+Run tests before committing:
 
 ```bash
-# Clone or download the repository
-cd Glimmerglass.WebApp
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Run the application
-streamlit run app.py
+pytest
+pytest --cov=db tests/  # With coverage
 ```
 
-The app will open in your default browser at `http://localhost:8501`
+---
 
-## 📖 Usage Guide
+## 🐛 Troubleshooting
 
-### 1. Data Upload (Tab 1)
+### Issue: "Module not found" errors
 
-**CSV Format Requirements:**
+**Solution**: Ensure you're using the virtual environment:
+```bash
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+### Issue: Database not initializing
+
+**Solution**: Manually initialize:
+```bash
+python3 -c "from db.schema import init_database; init_database()"
+```
+
+### Issue: Streamlit Cloud deployment fails
+
+**Common causes:**
+- Wrong main file path (should be `app.py`)
+- Wrong branch name (should be `main`)
+- Repository is private (make it public in GitHub settings)
+- Missing dependencies in `requirements.txt`
+
+**Check logs** in Streamlit Cloud dashboard for specific errors.
+
+### Issue: Auto-deploy not detecting changes
+
+**Solution**: 
+- Ensure `auto_deploy.py` is running (`python auto_deploy.py`)
+- Check you're editing files in the project directory
+- Verify the file isn't in the ignore list
+
+### Issue: Data not persisting on Streamlit Cloud
+
+**Expected behavior**: Streamlit Cloud uses ephemeral storage. The database resets on each deployment. 
+
+**For persistent storage:**
+- Use Streamlit Cloud secrets for database connection strings
+- Connect to external database (PostgreSQL, Supabase, etc.)
+- Store data in cloud storage (AWS S3, Google Cloud Storage)
+
+### Issue: CSV upload errors
+
+**Common causes:**
+- Missing required columns (timestamp, open, high, low, close, volume)
+- Incorrect datetime format in timestamp column
+- Non-numeric values in OHLC/volume columns
+
+**Solution**: Validate your CSV format
 - Required columns: `timestamp`, `open`, `high`, `low`, `close`, `vwap`
 - Optional: `volume`
 - Timestamp format: Any pandas-compatible datetime format
