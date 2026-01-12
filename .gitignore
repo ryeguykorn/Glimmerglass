@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Local database and data (exclude from git)
+data/tier0.db
+data/parquet/*.parquet
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Firebase (not needed for Streamlit Cloud)
+.firebase/
+Firebase.json
+public/
+
+# Testing
+.pytest_cache/
+htmlcov/
+.coverage
