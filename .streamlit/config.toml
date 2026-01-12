@@ -1,0 +1,13 @@
+[server]
+maxUploadSize = 200
+maxMessageSize = 200
+
+[runner]
+magicEnabled = false
+fastReruns = true
+
+[browser]
+gatherUsageStats = false
+
+[theme]
+base = "dark"
